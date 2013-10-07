@@ -6,6 +6,8 @@
 
 
 require 'vendor/autoload.php';
+require 'helpers/Converter.php';
+require 'helpers/Array2XML.php';
 
 $app = new \Slim\Slim(array(
     'templates.path' => 'templates',
@@ -25,7 +27,7 @@ $app->post('/', function() use ($app) {
     $type = $app->request()->post('type');
     $file = $_FILES['file'];
 
-    $mimeTypes = array('application/json', 'text/xml', 'text/csv');
+    $extensions = array('json', 'xml', 'csv');
 
     // check is file uploaded
     if($file['error'] !== 0){
@@ -35,16 +37,24 @@ $app->post('/', function() use ($app) {
         $app->render('index.php', array('error' => $error));
         $app->stop();
     }
+
     // check file mime type
-    if(!in_array($file['type'], $mimeTypes)){
+    $ext = end(explode(".", $file['name']));
+    if(!in_array($ext, $extensions)){
         $error = array(
             'file' => 'Wrong file type. Please choose json, xml or csv file type',
         );
         $app->render('index.php', array('error' => $error));
         $app->stop();
     }
+    $filename = '';
+    switch($type) {
+        case 'xml':
+            $filename = Converter::toXml($file);
+            break;
+    }
 
-    $app->render('index.php');
+    $app->render('index.php', array('filename' => $filename));
 });
 
 $app->run();

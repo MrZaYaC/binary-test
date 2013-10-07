@@ -1,6 +1,7 @@
 <?php
 /**
  * @var $error array
+ * @var $filename string
  */
 ?>
 <!DOCTYPE html>
@@ -51,6 +52,14 @@
                     </div>
                 </form>
             </div>
+            <?php if(isset($filename) && $filename !== null): ?>
+            <div class="alert alert-success">
+                <h4 class="text-center">Link to converted file</h4>
+                <div class="text-center">
+                    <a href="upload/<?=$filename?>" target="_blank"><?=$filename?></a>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
