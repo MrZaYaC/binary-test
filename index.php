@@ -7,7 +7,6 @@
 
 require 'vendor/autoload.php';
 require 'helpers/Converter.php';
-require 'helpers/Array2XML.php';
 
 $app = new \Slim\Slim(array(
     'templates.path' => 'templates',
@@ -48,9 +47,16 @@ $app->post('/', function() use ($app) {
         $app->stop();
     }
     $filename = '';
+    $converter = new Converter($file);
     switch($type) {
         case 'xml':
-            $filename = Converter::toXml($file);
+            $filename = $converter->toXml();
+            break;
+        case 'csv':
+            $filename = $converter->toCsv();
+            break;
+        case 'json':
+            $filename = $converter->toJson();
             break;
     }
 
