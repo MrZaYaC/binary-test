@@ -23,14 +23,20 @@ class Converter {
             case 'xml':
                 $json = json_encode((array)simplexml_load_file($this->file['tmp_name']));
                 file_put_contents(dirname(__FILE__) . '/../upload/'. $this->filename . '.json', self::cyrJsonStr($json));
-
-                return $this->filename . '.json';
                 break;
             case 'csv':
-                //@todo
+                $lines = array();
+                $handle = fopen($this->file['tmp_name'], "r");
+                while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+                    $lines[] = $data;
+                }
+                fclose($handle);
+                $array = self::generateArrayFromCsv($lines);
+                $json = json_encode($array);
+                file_put_contents(dirname(__FILE__) . '/../upload/'. $this->filename . '.json', self::cyrJsonStr($json));
                 break;
         }
-        return false;
+        return $this->filename . '.json';
     }
 
     public function toXml()
@@ -42,16 +48,24 @@ class Converter {
 
                 $xmlStr = self::generateValidXmlFromArray($array);
                 $output = new SimpleXMLElement($xmlStr);
-                if($output->asXML(dirname(__FILE__) . '/../upload/'. $this->filename . '.xml')){
-                    return $this->filename . '.xml';
-                }
+                $output->asXML(dirname(__FILE__) . '/../upload/'. $this->filename . '.xml');
                 break;
             case 'csv':
-                //@todo;
+                $lines = array();
+                $handle = fopen($this->file['tmp_name'], "r");
+                while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+                    $lines[] = $data;
+                }
+                fclose($handle);
+                $array = self::generateArrayFromCsv($lines);
+
+                $xmlStr = self::generateValidXmlFromArray($array);
+                $output = new SimpleXMLElement($xmlStr);
+                $output->asXML(dirname(__FILE__) . '/../upload/'. $this->filename . '.xml');
                 break;
 
         }
-        return false;
+        return $this->filename . '.xml';
     }
 
     public function toCsv()
@@ -76,6 +90,12 @@ class Converter {
         return $this->filename . '.csv';
     }
 
+    /**
+     * @param $array
+     * @param string $node_block
+     * @param string $node_name
+     * @return string
+     */
     private static function generateValidXmlFromArray($array, $node_block='root', $node_name='value') {
         $xml = '<?xml version="1.0" encoding="UTF-8" ?>';
 
@@ -86,6 +106,11 @@ class Converter {
         return $xml;
     }
 
+    /**
+     * @param $array
+     * @param $node_name
+     * @return string
+     */
     private static function generateXmlFromArray($array, $node_name) {
         $xml = '';
 
@@ -112,6 +137,12 @@ class Converter {
         return $xml;
     }
 
+    /**
+     * @param $array
+     * @param string $offset
+     * @param string $delimiter
+     * @return string
+     */
     private static function generateCsvFromArray($array, $offset = '', $delimiter = ';') {
         $csv = '';
 
@@ -139,6 +170,10 @@ class Converter {
         return $csv;
     }
 
+    /**
+     * @param SimpleXMLElement $parent
+     * @return array
+     */
     private static function generateArrayFromXml(SimpleXMLElement $parent)
     {
         $array = array();
@@ -149,6 +184,34 @@ class Converter {
             && $node = & $node[];
 
             $node = $element->count() ? self::generateArrayFromXml($element) : trim($element);
+        }
+
+        return $array;
+    }
+
+    /**
+     * @param array $lines
+     * @return array
+     */
+    private static function generateArrayFromCsv(array  $lines)
+    {
+        $array = array();
+        $key = '';
+        $count = count($lines);
+
+        for($i=0;$i<$count;$i++){
+            if(!empty($lines[$i][0]) && !empty($lines[$i][1])){
+                $array = array_merge($array, array($lines[$i][0] => $lines[$i][1]));
+            }
+            if(!empty($lines[$i][0]) && empty($lines[$i][1])){
+                $key = $lines[$i][0];
+            }
+            if(empty($lines[$i][0]) && !empty($lines[$i][1]) && !empty($lines[$i][2])){
+                $array = array_merge_recursive($array, array($key => array($lines[$i][1] => $lines[$i][2])));
+            }
+            if(empty($lines[$i][0]) && !empty($lines[$i][1]) && empty($lines[$i][2])){
+                $array = array_merge_recursive($array, array($key => array($lines[$i][1])));
+            }
         }
 
         return $array;
