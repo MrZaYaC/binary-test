@@ -35,6 +35,9 @@ class Converter {
                 $json = json_encode($array);
                 file_put_contents(dirname(__FILE__) . '/../upload/'. $this->filename . '.json', self::cyrJsonStr($json));
                 break;
+            case 'json':
+                move_uploaded_file($this->file['tmp_name'], dirname(__FILE__) . '/../upload/'. $this->filename . '.json');
+                break;
         }
         return $this->filename . '.json';
     }
@@ -63,7 +66,9 @@ class Converter {
                 $output = new SimpleXMLElement($xmlStr);
                 $output->asXML(dirname(__FILE__) . '/../upload/'. $this->filename . '.xml');
                 break;
-
+            case 'xml':
+                move_uploaded_file($this->file['tmp_name'], dirname(__FILE__) . '/../upload/'. $this->filename . '.xml');
+                break;
         }
         return $this->filename . '.xml';
     }
@@ -73,20 +78,22 @@ class Converter {
         switch($this->ext){
             case 'json':
                 $array = json_decode(file_get_contents($this->file['tmp_name']), true);
+                $file = fopen(dirname(__FILE__) . '/../upload/'. $this->filename . '.csv', 'w');
+                $csv_data = self::generateCsvFromArray($array);
+                fputs($file, $csv_data);
+                fclose($file);
                 break;
             case 'xml':
                 $array = json_decode(json_encode((array)simplexml_load_file($this->file['tmp_name'])), true);
+                $file = fopen(dirname(__FILE__) . '/../upload/'. $this->filename . '.csv', 'w');
+                $csv_data = self::generateCsvFromArray($array);
+                fputs($file, $csv_data);
+                fclose($file);
+                break;
+            case 'csv':
+                move_uploaded_file($this->file['tmp_name'], dirname(__FILE__) . '/../upload/'. $this->filename . '.csv');
                 break;
         }
-
-        $file = fopen(dirname(__FILE__) . '/../upload/'. $this->filename . '.csv', 'w');
-
-        $csv_data = self::generateCsvFromArray($array);
-
-        fputs($file, $csv_data);
-
-        fclose($file);
-
         return $this->filename . '.csv';
     }
 
